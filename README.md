@@ -23,7 +23,8 @@ Arguments:
   - `--valid` type=int. Percentage of dataset that goes in validation (ex. 8).
   - `--test` type=int. Percentage of dataset that goes in testing (ex. 8).
   - `--threads` type=int. How many CPU threads you would like to use (ex. 8).
-  - `--overlap` type=int. You can tile your slide with overlap of `N` pixels. **Remember!!!**: the formula for overlap: `tile size + 2 * overlap`, so if you want tiles of size 256x256, you need to pass 128 as `--size` argument and 64 as `--overlap` argument. If you want more info [OpenSlide docu](https://openslide.org/api/python/). Example: 64.  
+  - `--overlap` type=int. You can tile your slide with overlap of `N` pixels. **Remember!!!**: the formula for overlap: `tile size + 2 * overlap`, so if you want tiles of size 512x512, you need to pass 256 as `--size` argument and 128 as `--overlap` argument. If you want more info [OpenSlide docu](https://openslide.org/api/python/). Example: 64.  
+  - `--size` type=int. Tile size. Example: 512 (512x512).  
   - `--format` type=str. Format (extention) of your tiles (ex png, jpeg). Highly recommend png, otherwise code needs some internal changes.
   - `--quality` type=str. Quality of your tiles (ex 100). Highly recommend 100.
   - `--bounds` type=bool. No need to pass this argument, default is already set.
@@ -46,5 +47,22 @@ Arguments:
 ## 3. **Training**:
 
 Train U-net Neural Network architecture.
+To run **Unet_NN.py** in my containder you can: `docker run --rm --gpus "device=0" -it -u $(id -u ${USER}):$(id -g ${USER}) -w /mnt -v /data:/mnt em python Unet_NN.py --batch_size 12 --kernel_size 5 --GPU_num '0' --size 512 --train_num 54072 --valid_num 1280 --epochs 100 --size 512 --ckpt_name "Unet_512" --ckpt_save_freq 10 --train_dir "/mnt/path_to/tfrecords512/512_train*.tfrecord" --valid_dir "/mnt/path_to/tfrecords512/512_valid*.tfrecord" --csv_log_name "/mnt/Logs/Training.log" --tensorboard_logs "/mnt/Logs/TB_logs" --MP "Yes"
+
+Arguments:
+  - `--batch_size` type=int. Your typical batch size, scaled linearly with multiple GPU. Example: 64. 
+  - `--GPU_num` type=str. Which GPUs your want to use, one digit for one particular GPU, multiple for multiple GPUs (comma separated). Examples: '0' (first availbale GPU) or '0,1' (first two GPUs).
+  - `--train_num` type=int. Number of training images, was given at the end of **TFRecord_Creator** execution. Example: 54072.
+  - `--valid_num` type=int. Number of validation images, was given at the end of **TFRecord_Creator** execution. Example: 1280.
+  - `--epochs` type=int. For how many epochs you would like to run. Example: 100.
+  - `--size` type=int. Tile size. Example: 512 (512x512).  
+  - `--train_dir` type=str. This argument expects train files' `glob` pattern. Example: '/mnt/YOUR_TFRecords/512_train*.tfrecord'
+  - `--valid_dir` type=str. This argument expects validation files' `glob` pattern. Example: '/mnt/YOUR_TFRecords/512_valid*.tfrecord'
+  - `--ckpt_name` type=str. This is the name pattern with which your model checkpoints will be saved. Example: '/mnt/YOUR_TRAIN_OUTDIR/512_Unet'
+  - `--csv_log_name` type=str. This is a log name that will store your training progress information in a csv file, you can also pass filepath with it. Example: '/mnt/YOUR_TRAIN_OUTDIR/Training.log'
+  - `--tensorboard_logs` type=str. This is a folder which will have all information needed for [TensorBoard](https://www.tensorflow.org/tensorboard/get_started). If you are not familiar with this tool, I highly suggest checking it out. 
+  - `--MP` this argument is for [Mixed Precision](https://docs.nvidia.com/deeplearning/performance/mixed-precision-training/index.html). If you are not familiar with the concept I highly suggest checking it out, it can speed up your training up to 3.3x, you can also fit 2x batch size. Example: 'Yes' or 'No'.
+  
+## 4. **Evaluations and visualizations**:
 
 
