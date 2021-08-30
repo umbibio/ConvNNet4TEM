@@ -1,0 +1,38 @@
+import static qupath.lib.gui.scripting.QPEx.*
+
+def project = getProject()
+
+for (entry in project.getImageList()) {
+    def imageData = entry.readImageData()
+    def hierarchy = imageData.getHierarchy()
+    def annotations = hierarchy.getAnnotationObjects()
+    print entry.getImageName() + '\t' + annotations.size()
+}
+
+// Define output path (relative to project)
+
+def outputDir = buildFilePath(PROJECT_BASE_DIR, 'export')
+mkdirs(outputDir)
+double downsample = 1
+
+for (entry in project.getImageList()) {
+    //def imageData = getCurrentImageData()
+    def imageData = entry.readImageData()
+    def name = GeneralTools.getNameWithoutExtension(imageData.getServer().getMetadata().getName())
+    def path = buildFilePath(outputDir, name + "-labels.png")
+    // Define how much to downsample during export (may be required for large images)
+    // Create an ImageServer where the pixels are derived from annotations
+    def labelServer = new LabeledImageServer.Builder(imageData)
+          .backgroundLabel(0, ColorTools.WHITE) // Specify background label (usually 0 or 255)
+          .downsample(downsample)    // Choose server resolution; this should match the resolution at which tiles are exported
+          .addLabel('mitochondria', 1)      // Choose output labels (the order matters!)
+          //.addLabel('nucleus', 2)
+          //.addLabel('individual cell', 3)
+          .multichannelOutput(false) // If true, each label refers to the channel of a multichannel binary image (required for multiclass probability)
+          .build()
+
+        
+
+    // Write the image
+    writeImage(labelServer, path)
+}

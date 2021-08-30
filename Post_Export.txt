@@ -1,0 +1,43 @@
+# create two directories
+# 1) images
+# 2) masks
+# The exported masks from quPath are saved in the exports folder. Copy those into the mask folder
+# Then copy all the original tiff images to images folder.
+
+# Remove old dirs if they exist.
+rm -rf mitochondria_images
+rm -rf mitochondria_masks
+
+# Create new ones.
+mkdir mitochondria_images
+mkdir mitochondria_masks
+
+# Move images and masks.
+cd mitochondria_masks/
+cp /path_to_exported_masks_from_QuPath_project/export/*.png .
+cd ..
+cd mitochondria_images/
+cp /path_to_images_from_QuPath_project/images/*.tif .
+
+# In the images folder, rename all the copied tif files so there are no blanks in file names
+# Change the blank spaces in filenames to _
+for f in *; do g=`echo $f | tr '[:blank:]' '_'`; mv "$f" "$g" ; done
+
+# Repeats the same renaming for masks.
+cd ..
+cd mitochondria_masks/
+for f in *; do g=`echo $f | tr '[:blank:]' '_'`; mv "$f" "$g" ; done
+
+# Now identify empty masks by looking at the file sizes (17K). Save the names in empty_files. This should be done in masks folder.
+ls -alth | grep 17K | awk '{print $9}' > empty_files
+
+# Delete the empty ones from both images folder and the mask folder.
+for f in `cat empty_files`; do rm "/path_to/mitochondria_images/${f%-labels.png}.tif"; done
+for f in `cat empty_files`; do rm "$f"; done
+
+# Transfer the images with empty masks to a new folder.
+mkdir /path_to/mitochondria_images/images_with_labels
+
+# Identify tiff images with matching masks. These are the ones that remain after deleting empty masks. 
+for f in *; do g="${f%-labels.png}"; ls /path_to/mitochondria_images/* | grep $g; done > matching_files
+for f in `cat matching_files`; do dname="$(dirname ${f})"; fname="$(basename ${f})"; echo $fname; mv $f "${dname}/images_with_labels/${fname}"; done
