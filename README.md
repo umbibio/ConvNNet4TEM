@@ -47,10 +47,11 @@ Arguments:
 ## 3. **Training**:
 
 Train U-net Neural Network architecture.
-To run **Unet_NN.py** in my containder you can: `docker run --rm --gpus "device=0" -it -u $(id -u ${USER}):$(id -g ${USER}) -w /mnt -v /data:/mnt em python Unet_NN.py --batch_size 12 --kernel_size 5 --GPU_num '0' --size 512 --train_num 54072 --valid_num 1280 --epochs 100 --size 512 --ckpt_name "Unet_512" --ckpt_save_freq 10 --train_dir "/mnt/path_to/tfrecords512/512_train*.tfrecord" --valid_dir "/mnt/path_to/tfrecords512/512_valid*.tfrecord" --csv_log_name "/mnt/Logs/Training.log" --tensorboard_logs "/mnt/Logs/TB_logs" --MP "Yes"
+To run **Unet_NN.py** in my containder you can: `docker run --rm --gpus "device=0" -it -u $(id -u ${USER}):$(id -g ${USER}) -w /mnt -v /data:/mnt em python Unet_NN.py --batch_size 12 --kernel_size 5 --GPU_num '0' --size 512 --train_num 54072 --valid_num 1280 --epochs 100 --size 512 --ckpt_name "Unet_512" --ckpt_save_freq 10 --train_dir "/mnt/path_to/tfrecords512/512_train*.tfrecord" --valid_dir "/mnt/path_to/tfrecords512/512_valid*.tfrecord" --csv_log_name "/mnt/Logs/Training.log" --tensorboard_logs "/mnt/Logs/TB_logs" --MP "Yes"`
 
 Arguments:
-  - `--batch_size` type=int. Your typical batch size, scaled linearly with multiple GPU. Example: 64. 
+  - `--batch_size` type=int. Your typical batch size, scaled linearly with multiple GPU. Example: 64.
+  - `--kernel_size` type=int. Kernel size of convolutions layers, I higly suggest 5. Example: 5.
   - `--GPU_num` type=str. Which GPUs your want to use, one digit for one particular GPU, multiple for multiple GPUs (comma separated). Examples: '0' (first availbale GPU) or '0,1' (first two GPUs).
   - `--train_num` type=int. Number of training images, was given at the end of **TFRecord_Creator** execution. Example: 54072.
   - `--valid_num` type=int. Number of validation images, was given at the end of **TFRecord_Creator** execution. Example: 1280.
@@ -58,11 +59,24 @@ Arguments:
   - `--size` type=int. Tile size. Example: 512 (512x512).  
   - `--train_dir` type=str. This argument expects train files' `glob` pattern. Example: '/mnt/YOUR_TFRecords/512_train*.tfrecord'
   - `--valid_dir` type=str. This argument expects validation files' `glob` pattern. Example: '/mnt/YOUR_TFRecords/512_valid*.tfrecord'
-  - `--ckpt_name` type=str. This is the name pattern with which your model checkpoints will be saved. Example: '/mnt/YOUR_TRAIN_OUTDIR/512_Unet'
+  - `--ckpt_name` type=str. This is the name pattern with which your model checkpoints will be saved. Example: '/mnt/YOUR_TRAIN_OUTDIR/512_Unet'.
+  - `--ckpt_save_freq` type=int. How ofter you would like to checkpoint your model, measured in epochs. Example: 10.
   - `--csv_log_name` type=str. This is a log name that will store your training progress information in a csv file, you can also pass filepath with it. Example: '/mnt/YOUR_TRAIN_OUTDIR/Training.log'
   - `--tensorboard_logs` type=str. This is a folder which will have all information needed for [TensorBoard](https://www.tensorflow.org/tensorboard/get_started). If you are not familiar with this tool, I highly suggest checking it out. 
-  - `--MP` this argument is for [Mixed Precision](https://docs.nvidia.com/deeplearning/performance/mixed-precision-training/index.html). If you are not familiar with the concept I highly suggest checking it out, it can speed up your training up to 3.3x, you can also fit 2x batch size. Example: 'Yes' or 'No'.
+  - `--MP` type=str. This argument is for [Mixed Precision](https://docs.nvidia.com/deeplearning/performance/mixed-precision-training/index.html). If you are not familiar with the concept I highly suggest checking it out, it can speed up your training up to 3.3x, you can also fit 2x batch size. Example: 'Yes' or 'No'.
   
 ## 4. **Evaluations and visualizations**:
 
+Will run evaluations based on given testing dataset, after evaluations of every given checkpoint are done, will select best checkpoint based on IoU metric and make visualizations for every testing image. Visualizations consist of overlaying Ground Truth in Blue and Predicted semantic segmentation in Red. Most likely you would want to select best checkpoint based on validation dataset performance at training step and just passing this single checkpoint with testing dataset for visualization part. 
 
+Arguments:
+  - `--testdir` type=str. This argument expects test files' `glob` pattern. Example: '/mnt/YOUR_TFRecords/512_valid*.tfrecord'.
+  - `--GPU_num` type=str. Which GPUs your want to use, limited to one GPU. Example: '0'.
+  - `--size` type=int. Tile size. Example: 512 (512x512).
+  - `--weights_path` type=str. Path to directory where you store checkpoints' weights or path to one particular checkpoint's weights.
+  - `--outdir` type=str. Output directory to store eval and visualization results. Example: '/mnt/Visualizations/'
+  - `--naming_pattern` type=str. Naming pattern of your checkpoints, corresponds with `--ckpt_name` for previos - training step, no need to include full path since if will look for this pattern in `--weights_path` directory. Example: '512_Unet'
+  - `--csv_name` type=str. Name of .csv file that will store eval data. Example: 'eval.csv'
+  - `--batch_size` type=int. Your typical batch size, but this time I suggest using number that is divisible by 8 without any remainder. Example: '16'
+  - `--kernel_size` type=int. Kernel size of convolutions layers, must be the same as at training step. Example: 5.
+  - `--threshold` type=float. IoU threshold for visualizations. Example: 0.5.
