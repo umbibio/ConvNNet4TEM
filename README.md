@@ -14,6 +14,7 @@ Carefully follow Post_Export.txt bash script and edit commands according to wher
 
 
 ## 2. **Tiling**:
+
 Tile your images along with corresponding masks.
 To run **Tiling.py** in my containder you can: `docker run --rm -it -u $(id -u ${USER}):$(id -g ${USER}) -w /mnt -v /your_data:/mnt em python Tiling.py --train 80 --valid 10 --test 10 --threads 12 --size 256 --overlap 128 --format png --quality 100 --outdir "/mnt/outdir/" --imdir "/mnt/path_to_images/*.tif" --mskdir "/mnt/path_to_masks/*.png`.
 
@@ -30,5 +31,20 @@ Arguments:
   - `--imdir` type=str. Directory with your images that you would like to tile. (ex "/home/username/Documents/images/*tif")
   - `--mskdir` type=str. Directory with your masks that you would like to tile. (ex "/home/username/Documents/masks/*png")
 
+## 2. **TFRecord_Creator**:
+
+Create TFRecords for faster data throughput when training:
+To run **TFRecord_Creator.py** in my containder you can: `docker run --rm --gpus "device=0" -it -u $(id -u ${USER}):$(id -g ${USER}) -w /mnt -v /your_data:/mnt em python TFRecord_Creator.py --size 512 --traindir "/mnt/path_to/train512/" --validdir "/mnt/path_to/valid512/" --test "/mnt/path_to/test512/" --outdir "/mnt/path_to/tfrecords512"`.
+
+Arguments:
+  - `--traindir` type=str. Directory with your tiled training images.
+  - `--validdir` type=str. Directory with your tiled validation images.
+  - `--testdir` type=str. Directory with your tiled test images.
+  - `--outdir` type=str. Output directory where you would like to see you TFRecords. (ex "/home/username/Documents/tfrecords").
+  - `--size` type=int. Your tile size from previous step (ex. 512), no need to worry about overlap here, just use expected tile size.
+ 
+## 3. **Training**:
+
+Train U-net Neural Network architecture.
 
 
