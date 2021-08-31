@@ -13,9 +13,9 @@ Carefully follow Post_Export.txt bash script and edit commands according to wher
 
 # ML Pipeline
 ## 1. **Installation**:
-I higly recommend using my EM_Dockerfile. Simply copy it over to you machine in a separate folder and build with:
-docker build --no-cache -t em --build-arg user=YOUR_USERNAME -f EM_Dockerfile .
-Do not forget to specify YOUR_USERNAME as your host username, otherwise you risk running docker as root and if you do not have a sudo on your machine, all resulted files will be unaccessible to you.
+I higly recommend using my [EM_Dockerfile](https://github.com/AlexZhurkevich/Drug-prediction-with-Electromagnetic-Data/blob/main/EM_Dockerfile). Simply copy it over to you machine in a separate folder and build with:<br/>
+`docker build --no-cache -t em --build-arg user=YOUR_USERNAME -f EM_Dockerfile .`<br/>
+Do not forget to specify **YOUR_USERNAME** as your host **username**, otherwise you risk running docker as root and if you do not have a sudo on your machine, all resulted files will be unaccessible to you.
 
 ## 2. **Tiling**:
 
