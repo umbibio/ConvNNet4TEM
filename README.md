@@ -1,5 +1,5 @@
 # Drug prediction with Electromagnetic Data
-Fast and efficient ML semantic segmentation pipeline 
+Fast and efficient ML semantic segmentation pipeline.
 
 ![](Result.jpeg)
 
@@ -13,7 +13,9 @@ Carefully follow Post_Export.txt bash script and edit commands according to wher
 
 # ML Pipeline
 ## 1. **Installation**:
-
+I higly recommend using my EM_Dockerfile. Simply copy it over to you machine in a separate folder and build with:
+docker build --no-cache -t em --build-arg user=YOUR_USERNAME -f EM_Dockerfile .
+Do not forget to specify YOUR_USERNAME as your host username, otherwise you risk running docker as root and if you do not have a sudo on your machine, all resulted files will be unaccessible to you.
 
 ## 2. **Tiling**:
 
@@ -82,3 +84,7 @@ Arguments:
   - `--batch_size` type=int. Your typical batch size, but this time I suggest using number that is divisible by 8 without any remainder. Example: '16'
   - `--kernel_size` type=int. Kernel size of convolutions layers, must be the same as at training step. Example: 5.
   - `--threshold` type=float. IoU threshold for visualizations. Example: 0.5.
+  
+ # Python instructions:
+ If you do not want to use docker, you can install requirements manually.
+ I can confirm code being runnable with these libraries and corresponding versions: `openslide-tools v3.4.1, python3-openslide v1.1.1-2, python v3.6.7`, you can install these via `apt-get install`. Specific to python3 are: `opencv-python v4.5.3.56, Pillow v8.3.1, openslide-python v1.1.2`, you can install these via `pip3 install`. If you want all the details you can look at [EM_Dockerfile](https://github.com/AlexZhurkevich/Drug-prediction-with-Electromagnetic-Data/blob/main/EM_Dockerfile) and check what I am installing in docker image. 
