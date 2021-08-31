@@ -72,7 +72,7 @@ Arguments:
 ## 4. **Evaluations and visualizations**:
 
 Will run evaluations based on given testing dataset, after evaluations of every given checkpoint are done, will select best checkpoint based on IoU metric and make visualizations for every testing image. Visualizations consist of overlaying Ground Truth in Blue and Predicted semantic segmentation in Red. Most likely you would want to select best checkpoint based on validation dataset performance at training step and just passing this single checkpoint with testing dataset for visualization part. 
-To run **Image_assembler.py** in my containder you can: `docker run --gpus "device=1" -t -i -v /data:/mnt em python Image_assembler.py --testdir "/path_to/tfrecords512/512_test*.tfrecord" --size 512 --weights_path "/path_to_dir_with_checkpoints/" --batch_size 16 --kernel_size 5 --naming_pattern "Unet_512" --csv_name "Unet_512_Eval.csv" --threshold 0.7 --outdir "/path_to_store_outputs/"`
+To run **Image_assembler.py** in my containder you can: `docker run --rm --gpus "device=1" -t -i -v /data:/mnt em python Image_assembler.py --testdir "/path_to/tfrecords512/512_test*.tfrecord" --size 512 --weights_path "/path_to_dir_with_checkpoints/" --batch_size 16 --kernel_size 5 --naming_pattern "Unet_512" --csv_name "Unet_512_Eval.csv" --threshold 0.7 --outdir "/path_to_store_outputs/"`
 
 Arguments:
   - `--testdir` type=str. This argument expects test files' `glob` pattern. Example: '/mnt/YOUR_TFRecords/512_valid*.tfrecord'.
