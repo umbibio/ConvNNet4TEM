@@ -82,7 +82,7 @@ Arguments:
   - `--outdir` type=str. Output directory to store eval and visualization results. Example: '/mnt/Visualizations/'
   - `--naming_pattern` type=str. Naming pattern of your checkpoints, corresponds with `--ckpt_name` for previos - training step, no need to include full path since if will look for this pattern in `--weights_path` directory. Example: '512_Unet'
   - `--csv_name` type=str. Name of .csv file that will store eval data. Example: 'eval.csv'
-  - `--contour_csv_name` type=str. Name of .csv file that will store area and arclen of prediction contour data. Example: 'contour.csv'
+  - `--contour_csv_name` type=str. Name of .csv file that will store area and arclen of predictions contour data. Example: 'contour.csv'
   - `--batch_size` type=int. Your typical batch size, but this time I suggest using number that is divisible by 8 without any remainder. Example: '16'
   - `--kernel_size` type=int. Kernel size of convolutions layers, must be the same as at training step. Example: 5.
   - `--threshold` type=float. IoU threshold for visualizations. Example: 0.5.
