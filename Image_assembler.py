@@ -157,7 +157,7 @@ def predictor(model, file, testdir, batch_size, steps, csv_name):
         print("Encountered NaN, skipping checkpoint")
 
 #Responsible for mask merger and overall final processing
-def Image_Creator(og_image, true_msk, pred_msk, threshold, saving_path, file_basename):
+def Image_Creator(og_image, true_msk, pred_msk, threshold, saving_path, file_basename, contour_csv_name):
     #Get thresholded true/false masks
     temp_msk = true_msk > 0.5
     temp_pred = pred_msk > threshold
@@ -173,7 +173,7 @@ def Image_Creator(og_image, true_msk, pred_msk, threshold, saving_path, file_bas
 
     #Red pixels for predicted mitochondria
     RGB_pred[~temp_pred] = [255.,0.,0.]
-            
+
     #Image conversion
     image = cv2.cvtColor(og_image*255, cv2.COLOR_GRAY2RGB)
 
@@ -198,6 +198,26 @@ def Image_Creator(og_image, true_msk, pred_msk, threshold, saving_path, file_bas
     #Write the merged image
     cv2.imwrite('%sMERGED_%s.jpeg' % (saving_path, file_basename), final_merged, [cv2.IMWRITE_JPEG_QUALITY, 90])
 
+    #Contours prep
+    pred_converted = np.uint8(RGB_pred)
+    pred_gray = cv2.cvtColor(pred_converted, cv2.COLOR_BGR2GRAY)
+    #Canny edge detection
+    pred_edge = cv2.Canny(pred_gray, 100, 150)
+    #Extract contours
+    pred_contours, pred_hierarchy = cv2.findContours(pred_edge, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    #Uncomment if you would like to see contours visualization
+    #contours_visual = cv2.drawContours(pred_converted, pred_contours, -1, (0,255,0), 10)
+    #cv2.imwrite('%sCONTOURS_%s.jpeg' % (saving_path, file_basename), contours_visual, [cv2.IMWRITE_JPEG_QUALITY, 90])
+
+    #Appends contour area, arclen along with image names to contour csv
+    with open(contour_csv_name, 'a') as contour_csv_file:  
+        writer = csv.writer(contour_csv_file)
+        #Write contour information
+        for contour in pred_contours:
+            writer.writerow([file_basename, cv2.contourArea(contour), cv2.arcLength(contour,True)])
+        #Close file
+        contour_csv_file.close()
+
 #Main
 def main():
     #Getting arguments
@@ -209,6 +229,7 @@ def main():
     parser.add_argument('--outdir', type=str)
     parser.add_argument('--naming_pattern', type=str)
     parser.add_argument('--csv_name', type=str)
+    parser.add_argument('--contour_csv_name', type=str)
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--kernel_size', type=int, default=4)
     parser.add_argument('--threshold', type=float, default=0.5)
@@ -225,6 +246,7 @@ def main():
     weights_path = args.weights_path
     naming_pattern = args.naming_pattern
     csv_name = args.csv_name
+    contour_csv_name = args.contour_csv_name
     outdir = args.outdir
 
     #How many image along one cordinate to 
@@ -241,10 +263,16 @@ def main():
     metrics = ["acc", iou]
 
     #Open csv and write metric names
-    with open(outdir+csv_name, 'a') as csv_file:  
+    with open(outdir+csv_name, 'w') as csv_file:  
         writer = csv.writer(csv_file)
-        writer.writerow(["Filename", "accuracy", "IoU"])
+        writer.writerow(["Filename", "Accuracy", "IoU"])
         csv_file.close()
+  
+    #Open contour csv and write names, area and arclen 
+    with open(outdir+contour_csv_name, 'w') as contour_csv_file:  
+        writer = csv.writer(contour_csv_file)
+        writer.writerow(["Im_name", "Area", "Arclength"])
+        contour_csv_file.close()
 
     #Loop over checkpoints making predictions
     for file in os.listdir(weights_path):
@@ -318,7 +346,7 @@ def main():
                         horizontal_msk = opened_mask
                         horizontal_pred = opened_prediction
                         #Finalize results
-                        Image_Creator(horizontal_im, horizontal_msk, horizontal_pred, threshold, outdir, file_basename)
+                        Image_Creator(horizontal_im, horizontal_msk, horizontal_pred, threshold, outdir, file_basename, outdir+contour_csv_name)
                         break
                     else:
                         vertical_im = np.array([])
@@ -369,7 +397,7 @@ def main():
             horizontal_pred = np.concatenate((horizontal_pred, vertical_pred), axis=1)
 
             #Finalize results
-            Image_Creator(horizontal_im, horizontal_msk, horizontal_pred, threshold, outdir, file_basename)
+            Image_Creator(horizontal_im, horizontal_msk, horizontal_pred, threshold, outdir, file_basename, outdir+contour_csv_name)
        
 #Call your main     
 main()
