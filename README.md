@@ -99,3 +99,16 @@ Arguments:
   - `--kernel_size` type=int. Kernel size of convolutions layers, must be the same value used during training. Example: 5.
   - `--threshold` type=float. IoU threshold for visualizations. Example: 0.5.
   
+## Using the docker image
+
+The docker image can be build using the following command
+```
+$ docker build --no-cache -t cnn_tem -f Dockerfile .
+```
+where we have named the image with the tag `cnn_tem`.
+
+To execute one of the scripts in this repo, you may use this command as a template:
+```
+$ docker run --rm --gpus "device=0" -it -u $(id -u):$(id -g) -v /path_to_your_data:/app/data cnn_tem python3 script_name.py args
+```
+Note that the paths to files in this command must be with respect to the container's filesystem, i.e. `/app/data/some_folder_or_path`
