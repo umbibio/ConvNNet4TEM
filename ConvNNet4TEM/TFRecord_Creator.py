@@ -129,10 +129,10 @@ def main():
     
     #Getting arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--traindir', type=str)
-    parser.add_argument('--validdir', type=str)
-    parser.add_argument('--testdir', type=str)
-    parser.add_argument('--outdir', type=str)
+    parser.add_argument('--traindir', type=str, required=True)
+    parser.add_argument('--validdir', type=str, required=True)
+    parser.add_argument('--testdir', type=str, required=True)
+    parser.add_argument('--outdir', type=str, required=True)
     parser.add_argument('--size', type=int, default=512)
     args = parser.parse_args()
 
@@ -170,4 +170,6 @@ def main():
     except:
         print("Wasnt able to process TESTING dataset")
 
-main()
+
+if __name__ == "__main__":
+    main()

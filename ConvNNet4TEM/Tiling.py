@@ -272,9 +272,9 @@ def main():
     parser.add_argument('--format', type=str, default='png')
     parser.add_argument('--quality', type=str, default=100)
     parser.add_argument('--bounds', type=bool, default=True)
-    parser.add_argument('--outdir', type=str)
-    parser.add_argument('--imdir', type=str)
-    parser.add_argument('--mskdir', type=str)
+    parser.add_argument('--outdir', type=str, required=True)
+    parser.add_argument('--imdir', type=str, required=True)
+    parser.add_argument('--mskdir', type=str, required=True)
     args = parser.parse_args()
     
     #Casting arguments
@@ -356,4 +356,7 @@ def main():
         print("Amount of test tiles: %d" % len([f for f in os.listdir(test_im_dir)if os.path.isfile(os.path.join(test_im_dir, f))]))
     except:
         print("Wasnt able to count amount of tiles in TESTING dataset")
-main()
+
+
+if __name__ == "__main__":
+    main()

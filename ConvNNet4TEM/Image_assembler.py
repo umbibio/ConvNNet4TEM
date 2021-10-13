@@ -207,13 +207,13 @@ def main():
     #Getting arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--GPU_num', type=str, default='0')
-    parser.add_argument('--testdir', type=str)
+    parser.add_argument('--testdir', type=str, required=True)
     parser.add_argument('--size', type=int, default=512)
-    parser.add_argument('--weights_path', type=str)
-    parser.add_argument('--outdir', type=str)
-    parser.add_argument('--naming_pattern', type=str)
-    parser.add_argument('--csv_name', type=str)
-    parser.add_argument('--contour_csv_name', type=str)
+    parser.add_argument('--weights_path', type=str, required=True)
+    parser.add_argument('--outdir', type=str, required=True)
+    parser.add_argument('--naming_pattern', type=str, required=True)
+    parser.add_argument('--csv_name', type=str, required=True)
+    parser.add_argument('--contour_csv_name', type=str, required=True)
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--kernel_size', type=int, default=4)
     parser.add_argument('--threshold', type=float, default=0.5)
@@ -382,6 +382,7 @@ def main():
 
             #Finalize results
             Image_Creator(horizontal_im, horizontal_msk, horizontal_pred, threshold, outdir, file_basename, outdir+contour_csv_name)
-       
-#Call your main     
-main()
+
+
+if __name__ == "__main__":
+    main()

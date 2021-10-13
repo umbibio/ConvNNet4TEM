@@ -9,68 +9,6 @@ import argparse
 from tensorflow.keras import layers
 from tensorflow import keras
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--batch_size', type=int, default=4)
-parser.add_argument('--kernel_size', type=int, default=4)
-parser.add_argument('--GPU_num', type=str, default='0')
-parser.add_argument('--train_num', type=int)
-parser.add_argument('--valid_num', type=int)
-parser.add_argument('--epochs', type=int, default=200)
-parser.add_argument('--size', type=int, default=512)
-parser.add_argument('--train_dir', type=str)
-parser.add_argument('--valid_dir', type=str)
-parser.add_argument('--ckpt_name', type=str)
-parser.add_argument('--ckpt_save_freq', type=int, default=10)
-parser.add_argument('--csv_log_name', type=str)
-parser.add_argument('--tensorboard_logs', type=str)
-parser.add_argument('--MP', type=str, default="Yes")
-args = parser.parse_args()
-
-#Which GPU to use
-GPU_number = args.GPU_num
-os.environ["CUDA_VISIBLE_DEVICES"]=GPU_number
-#Size of your batch
-batch_size = args.batch_size
-#Kernel size
-kernel_size = args.kernel_size
-#Number of images in train dataset
-train_num = args.train_num
-#Image size
-size = args.size
-#Number of images in valid dataset
-valid_num = args.valid_num
-#Epochs
-EPOCHS = args.epochs
-#Training directory along with glob file pattern
-train_dir = args.train_dir
-#Valid directory along with glob file pattern
-valid_dir = args.valid_dir
-#Chekpoint names with _epoch#.hdf5 in the end
-ckpt_name = args.ckpt_name
-#Checkpoint saving frequency 
-ckpt_save_freq = args.ckpt_save_freq
-#CSV log filename
-csv_log_name = args.csv_log_name
-#Tensorboard logs location
-tensorboard_logs = args.tensorboard_logs
-#Mixed precision 
-MP = args.MP
-
-os.environ["CUDA_VISIBLE_DEVICES"]=GPU_number
-#Multi-GPU
-strategy = tf.distribute.MirroredStrategy()
-GPUnum = strategy.num_replicas_in_sync
-print ('Number of devices: {}'.format(GPUnum))
-batch_size = batch_size*GPUnum
-
-if MP == "Yes":
-    #Mixed precision
-    tf.keras.mixed_precision.set_global_policy('mixed_float16')
-    print('Compute dtype: %s' % tf.keras.mixed_precision.global_policy())
-
-#Getting steps
-TRAINING_STEPS_PER_EPOCH = train_num//batch_size
-VALIDATION_STEPS_PER_EPOCH = valid_num//batch_size
 
 def read_tfrecord(record):
     keys_to_features = {
@@ -90,6 +28,7 @@ def read_tfrecord(record):
     mask = tf.cast(mask, tf.float32) / 255
     return image, mask
 
+
 #Get training dataset
 def get_batched_train_dataset(BATCH_SIZE, filenames):
     files = tf.data.Dataset.list_files(filenames)
@@ -99,7 +38,8 @@ def get_batched_train_dataset(BATCH_SIZE, filenames):
     dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
     dataset = dataset.repeat()
     return dataset
-    
+
+
 #Get validation dataset
 def get_batched_valid_dataset(BATCH_SIZE, filenames):
     files = tf.data.Dataset.list_files(filenames)
@@ -110,11 +50,6 @@ def get_batched_valid_dataset(BATCH_SIZE, filenames):
     dataset = dataset.repeat()
     return dataset
 
-def get_training_dataset():
-  return get_batched_train_dataset(batch_size, train_dir)
-
-def get_validation_dataset():
-  return get_batched_valid_dataset(batch_size, valid_dir)
 
 def my_iou(y_true, y_pred):
     def f(y_true, y_pred):
@@ -188,19 +123,94 @@ def get_model(size, kernel_size):
     return model
 
 
-with strategy.scope():
-    metrics = ["acc", my_iou]
-    model = get_model(size, kernel_size)
-    model.compile(optimizer="adam", loss="binary_crossentropy", metrics=metrics)
+def main():
 
-    my_callbacks = [
-        tf.keras.callbacks.CSVLogger(csv_log_name, separator=',', append=False),
-        tf.keras.callbacks.TensorBoard(log_dir=tensorboard_logs, histogram_freq=1, write_graph=True, update_freq=500, profile_batch=0),
-    	tf.keras.callbacks.ModelCheckpoint('%s_{epoch:08d}.hdf5' % ckpt_name, save_best_only=False, save_weights_only=False, save_freq=TRAINING_STEPS_PER_EPOCH*ckpt_save_freq)]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--batch_size', type=int, default=4)
+    parser.add_argument('--kernel_size', type=int, default=4)
+    parser.add_argument('--GPU_num', type=str, default='0')
+    parser.add_argument('--train_num', type=int, required=True)
+    parser.add_argument('--valid_num', type=int, required=True)
+    parser.add_argument('--epochs', type=int, default=200)
+    parser.add_argument('--size', type=int, default=512)
+    parser.add_argument('--train_dir', type=str, required=True)
+    parser.add_argument('--valid_dir', type=str, required=True)
+    parser.add_argument('--ckpt_name', type=str, required=True)
+    parser.add_argument('--ckpt_save_freq', type=int, default=10)
+    parser.add_argument('--csv_log_name', type=str, required=True)
+    parser.add_argument('--tensorboard_logs', type=str, required=True)
+    parser.add_argument('--MP', type=str, default="Yes")
+    args = parser.parse_args()
 
-model.summary()
-model.fit(get_training_dataset(),
-        validation_data=get_validation_dataset(),
-	    epochs=EPOCHS,
-        steps_per_epoch=TRAINING_STEPS_PER_EPOCH, 
-        validation_steps=VALIDATION_STEPS_PER_EPOCH, callbacks=my_callbacks)
+    #Which GPU to use
+    GPU_number = args.GPU_num
+    os.environ["CUDA_VISIBLE_DEVICES"]=GPU_number
+    #Size of your batch
+    batch_size = args.batch_size
+    #Kernel size
+    kernel_size = args.kernel_size
+    #Number of images in train dataset
+    train_num = args.train_num
+    #Image size
+    size = args.size
+    #Number of images in valid dataset
+    valid_num = args.valid_num
+    #Epochs
+    EPOCHS = args.epochs
+    #Training directory along with glob file pattern
+    train_dir = args.train_dir
+    #Valid directory along with glob file pattern
+    valid_dir = args.valid_dir
+    #Chekpoint names with _epoch#.hdf5 in the end
+    ckpt_name = args.ckpt_name
+    #Checkpoint saving frequency 
+    ckpt_save_freq = args.ckpt_save_freq
+    #CSV log filename
+    csv_log_name = args.csv_log_name
+    #Tensorboard logs location
+    tensorboard_logs = args.tensorboard_logs
+    #Mixed precision 
+    MP = args.MP
+
+    os.environ["CUDA_VISIBLE_DEVICES"]=GPU_number
+    #Multi-GPU
+    strategy = tf.distribute.MirroredStrategy()
+    GPUnum = strategy.num_replicas_in_sync
+    print ('Number of devices: {}'.format(GPUnum))
+    batch_size = batch_size*GPUnum
+
+    if MP == "Yes":
+        #Mixed precision
+        tf.keras.mixed_precision.set_global_policy('mixed_float16')
+        print('Compute dtype: %s' % tf.keras.mixed_precision.global_policy())
+
+    #Getting steps
+    TRAINING_STEPS_PER_EPOCH = train_num//batch_size
+    VALIDATION_STEPS_PER_EPOCH = valid_num//batch_size
+
+    with strategy.scope():
+        metrics = ["acc", my_iou]
+        model = get_model(size, kernel_size)
+        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=metrics)
+
+        my_callbacks = [
+            tf.keras.callbacks.CSVLogger(csv_log_name, separator=',', append=False),
+            tf.keras.callbacks.TensorBoard(log_dir=tensorboard_logs, histogram_freq=1, write_graph=True, update_freq=500, profile_batch=0),
+            tf.keras.callbacks.ModelCheckpoint('%s_{epoch:08d}.hdf5' % ckpt_name, save_best_only=False, save_weights_only=False, save_freq=TRAINING_STEPS_PER_EPOCH*ckpt_save_freq)]
+
+    def get_training_dataset():
+        return get_batched_train_dataset(batch_size, train_dir)
+
+    def get_validation_dataset():
+        return get_batched_valid_dataset(batch_size, valid_dir)
+
+    model.summary()
+    model.fit(get_training_dataset(),
+              validation_data=get_validation_dataset(),
+              epochs=EPOCHS,
+              steps_per_epoch=TRAINING_STEPS_PER_EPOCH, 
+              validation_steps=VALIDATION_STEPS_PER_EPOCH, callbacks=my_callbacks)
+
+
+if __name__ == "__main__":
+    main()
