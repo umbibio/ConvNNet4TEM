@@ -45,6 +45,6 @@ setuptools.setup(
             'cnn4tem-unet-nn=ConvNNet4TEM.Unet_NN:main',
             'cnn4tem-image-assembler=ConvNNet4TEM.Image_assembler:main']
     },
-    install_requires=['opencv-python', 'openslide-python'],
+    install_requires=['numpy~=1.19.2', 'tensorflow~=2.6.0', 'protobuf~=3.18.1', 'opencv-python', 'openslide-python'],
     zip_safe=False
 )
