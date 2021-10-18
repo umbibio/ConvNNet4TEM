@@ -7,7 +7,6 @@ import sys
 from PIL import Image
 import argparse
 from tensorflow.keras import layers
-from tensorflow import keras
 
 
 def read_tfrecord(record):
@@ -31,22 +30,32 @@ def read_tfrecord(record):
 
 #Get training dataset
 def get_batched_train_dataset(BATCH_SIZE, filenames):
+    try:
+        AUTOTUNE = tf.data.AUTOTUNE
+    except AttributeError:
+        AUTOTUNE = tf.data.experimental.AUTOTUNE
+
     files = tf.data.Dataset.list_files(filenames)
-    dataset = files.interleave(tf.data.TFRecordDataset, num_parallel_calls=tf.data.AUTOTUNE)
-    dataset = dataset.map(read_tfrecord, num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = files.interleave(tf.data.TFRecordDataset, num_parallel_calls=AUTOTUNE)
+    dataset = dataset.map(read_tfrecord, num_parallel_calls=AUTOTUNE)
     dataset = dataset.batch(BATCH_SIZE, drop_remainder=False)
-    dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
+    dataset = dataset.prefetch(AUTOTUNE)
     dataset = dataset.repeat()
     return dataset
 
 
 #Get validation dataset
 def get_batched_valid_dataset(BATCH_SIZE, filenames):
+    try:
+        AUTOTUNE = tf.data.AUTOTUNE
+    except AttributeError:
+        AUTOTUNE = tf.data.experimental.AUTOTUNE
+
     files = tf.data.Dataset.list_files(filenames)
     dataset = tf.data.TFRecordDataset(filenames=files)
-    dataset = dataset.map(read_tfrecord, num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = dataset.map(read_tfrecord, num_parallel_calls=AUTOTUNE)
     dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
-    dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
+    dataset = dataset.prefetch(AUTOTUNE)
     dataset = dataset.repeat()
     return dataset
 
@@ -65,7 +74,7 @@ def my_iou(y_true, y_pred):
 
 
 def get_model(size, kernel_size):
-    inputs = keras.Input((size, size, 1))
+    inputs = tf.keras.Input((size, size, 1))
 
     ### [First half of the network: downsampling inputs] ###
 
@@ -119,7 +128,7 @@ def get_model(size, kernel_size):
     outputs = layers.Activation("sigmoid", dtype='float32', name='predictions')(x)
 
     # Define the model
-    model = keras.Model(inputs, outputs)
+    model = tf.keras.Model(inputs, outputs)
     return model
 
 
@@ -181,8 +190,13 @@ def main():
 
     if MP == "Yes":
         #Mixed precision
-        tf.keras.mixed_precision.set_global_policy('mixed_float16')
-        print('Compute dtype: %s' % tf.keras.mixed_precision.global_policy())
+        try:
+            tf.keras.mixed_precision.set_global_policy('mixed_float16')
+            print('Compute dtype: %s' % tf.keras.mixed_precision.global_policy())
+        except AttributeError:
+            policy = tf.keras.mixed_precision.experimental.Policy('mixed_float16')
+            tf.keras.mixed_precision.experimental.set_policy(policy)
+            print('Compute dtype: %s' % tf.keras.mixed_precision.experimental.global_policy())
 
     #Getting steps
     TRAINING_STEPS_PER_EPOCH = train_num//batch_size
