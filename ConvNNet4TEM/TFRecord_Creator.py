@@ -104,14 +104,14 @@ def tfrecord_creation(dataset, tfrecord_label, tile_size, outdir):
             #Basecase
             if im_counter == 0:
                 total_counter = 0
-                output_file  = os.path.join(outdir, '%d_%s_%s_.tfrecord' % (tile_size, tfrecord_label, org_file_name))
+                output_file  = os.path.join(outdir, tfrecord_label, '%d_%s_%s_.tfrecord' % (tile_size, tfrecord_label, org_file_name))
                 writer = tf.io.TFRecordWriter(output_file)
             #When filename changes, time to create a new tfrecord
             elif last_value != org_file_name:
                 print('%s has %d of %s tiles' % (last_value, im_counter, tfrecord_label))
                 writer.close()
                 im_counter = 0
-                output_file  = os.path.join(outdir, '%d_%s_%s_.tfrecord' % (tile_size, tfrecord_label, org_file_name))
+                output_file  = os.path.join(outdir, tfrecord_label, '%d_%s_%s_.tfrecord' % (tile_size, tfrecord_label, org_file_name))
                 writer = tf.io.TFRecordWriter(output_file)
 
             #Write to tfrecord your examples 
@@ -150,6 +150,10 @@ def main():
     if not CHECK_FOLDER:
         os.makedirs(outdir)
         print("Created folder: ", outdir)
+        for label in ['train', 'valid', 'test']:
+            label_outdir = os.path.join(outdir, label)
+            os.makedirs(label_outdir)
+            print("Created folder: ", label_outdir)
 
     #Creation of matching dictionaries and TFRecord creator
     try:
