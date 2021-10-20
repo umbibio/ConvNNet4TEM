@@ -29,13 +29,14 @@ def read_tfrecord(record):
 
 
 #Get training dataset
-def get_batched_train_dataset(BATCH_SIZE, filenames):
+def get_batched_train_dataset(BATCH_SIZE, directory_path):
     try:
         AUTOTUNE = tf.data.AUTOTUNE
     except AttributeError:
         AUTOTUNE = tf.data.experimental.AUTOTUNE
 
-    files = tf.data.Dataset.list_files(filenames)
+    pattern=os.path.join(directory_path, "*.tfrecord")
+    files = tf.data.Dataset.list_files(pattern)
     dataset = files.interleave(tf.data.TFRecordDataset, num_parallel_calls=AUTOTUNE)
     dataset = dataset.map(read_tfrecord, num_parallel_calls=AUTOTUNE)
     dataset = dataset.batch(BATCH_SIZE, drop_remainder=False)
@@ -45,13 +46,14 @@ def get_batched_train_dataset(BATCH_SIZE, filenames):
 
 
 #Get validation dataset
-def get_batched_valid_dataset(BATCH_SIZE, filenames):
+def get_batched_valid_dataset(BATCH_SIZE, directory_path):
     try:
         AUTOTUNE = tf.data.AUTOTUNE
     except AttributeError:
         AUTOTUNE = tf.data.experimental.AUTOTUNE
 
-    files = tf.data.Dataset.list_files(filenames)
+    pattern=os.path.join(directory_path, "*.tfrecord")
+    files = tf.data.Dataset.list_files(pattern)
     dataset = tf.data.TFRecordDataset(filenames=files)
     dataset = dataset.map(read_tfrecord, num_parallel_calls=AUTOTUNE)
     dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
@@ -73,20 +75,22 @@ def my_iou(y_true, y_pred):
     return tf.numpy_function(f, [y_true, y_pred], tf.float32)
 
 
-def get_model(size, kernel_size):
+def get_model(size, kernel_size, model_depth):
+
+    filters_list = [2**i for i in range(4, 4 + model_depth)]
     inputs = tf.keras.Input((size, size, 1))
 
     ### [First half of the network: downsampling inputs] ###
 
     # Entry block
-    x = layers.Conv2D(16, (kernel_size, kernel_size), strides=2, padding="same")(inputs)
+    x = layers.Conv2D(filters_list[0], (kernel_size, kernel_size), strides=2, padding="same")(inputs)
     x = layers.BatchNormalization()(x)
     x = layers.Activation("relu")(x)
 
     previous_block_activation = x  # Set aside residual
 
     # Blocks 1, 2, 3 are identical apart from the feature depth.
-    for filters in [32, 64, 128, 256]:
+    for filters in filters_list[1:]:
         x = layers.Activation("relu")(x)
         x = layers.SeparableConv2D(filters, (kernel_size, kernel_size), padding="same")(x)
         x = layers.BatchNormalization()(x)
@@ -106,7 +110,7 @@ def get_model(size, kernel_size):
 
     ### [Second half of the network: upsampling inputs] ###
 
-    for filters in [256, 128, 64, 32, 16]:
+    for filters in reversed(filters_list):
         x = layers.Activation("relu")(x)
         x = layers.Conv2DTranspose(filters, (kernel_size, kernel_size), padding="same")(x)
         x = layers.BatchNormalization()(x)
@@ -142,6 +146,7 @@ def main():
     parser.add_argument('--valid_num', type=int, required=True)
     parser.add_argument('--epochs', type=int, default=200)
     parser.add_argument('--size', type=int, default=512)
+    parser.add_argument('--model_depth', type=int, default=4)
     parser.add_argument('--train_dir', type=str, required=True)
     parser.add_argument('--valid_dir', type=str, required=True)
     parser.add_argument('--ckpt_name', type=str, required=True)
@@ -162,6 +167,8 @@ def main():
     train_num = args.train_num
     #Image size
     size = args.size
+    #Model depth, number of filters in model
+    model_depth = args.model_depth
     #Number of images in valid dataset
     valid_num = args.valid_num
     #Epochs
@@ -204,7 +211,7 @@ def main():
 
     with strategy.scope():
         metrics = ["acc", my_iou]
-        model = get_model(size, kernel_size)
+        model = get_model(size, kernel_size, model_depth)
         model.compile(optimizer="adam", loss="binary_crossentropy", metrics=metrics)
 
         my_callbacks = [
