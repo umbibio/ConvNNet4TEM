@@ -154,6 +154,7 @@ def main():
     parser.add_argument('--csv_log_name', type=str, required=True)
     parser.add_argument('--tensorboard_logs', type=str, required=True)
     parser.add_argument('--MP', type=str, default="Yes")
+    parser.add_argument('--summary_only', action="store_true")
     args = parser.parse_args()
 
     #Which GPU to use
@@ -219,13 +220,19 @@ def main():
             tf.keras.callbacks.TensorBoard(log_dir=tensorboard_logs, histogram_freq=1, write_graph=True, update_freq=500, profile_batch=0),
             tf.keras.callbacks.ModelCheckpoint('%s_{epoch:08d}.hdf5' % ckpt_name, save_best_only=False, save_weights_only=False, save_freq=TRAINING_STEPS_PER_EPOCH*ckpt_save_freq)]
 
+    model.summary()
+    if args.summary_only:
+        print("Requested summary alone. Exiting now...\n")
+        tf.keras.backend.clear_session()
+
+        return
+
     def get_training_dataset():
         return get_batched_train_dataset(batch_size, train_dir)
 
     def get_validation_dataset():
         return get_batched_valid_dataset(batch_size, valid_dir)
 
-    model.summary()
     model.fit(get_training_dataset(),
               validation_data=get_validation_dataset(),
               epochs=EPOCHS,
